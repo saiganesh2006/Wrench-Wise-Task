@@ -1,0 +1,405 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BankMind - Multi-Agent Banking Assistant</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#E9EEF0; --panel:#FFFFFF; --ink:#14232B; --muted:#5C6E77; --line:#D3DCE0;
+  --teal:#0E7C7B; --teal-d:#0A5958; --teal-l:#DDF0EF; --coral:#CF4036; --coral-l:#FBE4E1;
+  --amber:#B97A10; --amber-l:#FBF0D8; --slate:#14232B; --green:#1E8A4C;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{font-family:var(--sans);background:var(--bg);color:var(--ink);font-size:14px;line-height:1.5}
+button,select,input{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+[hidden]{display:none!important}
+/* ---------- login ---------- */
+.login{min-height:100%;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr)}
+.login .brand{background:var(--slate);color:#fff;padding:56px 48px;display:flex;flex-direction:column;justify-content:center}
+.login .brand h1{font-size:34px;margin:0 0 10px;font-weight:600;letter-spacing:-.3px}
+.login .brand p{color:#A8BEC7;max-width:42ch;margin:0 0 26px;font-size:15px}
+.flow{display:flex;flex-wrap:wrap;gap:8px;max-width:46ch}
+.flow span{font-family:var(--mono);font-size:12px;padding:4px 10px;border:1px solid #35525E;border-radius:6px;color:#BFE9E6}
+.login .formwrap{display:flex;align-items:center;justify-content:center;padding:32px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:28px;width:100%;max-width:400px}
+.card h2{margin:0 0 4px;font-size:20px}
+.card .hint{color:var(--muted);margin:0 0 18px}
+.field{display:block;margin-bottom:14px}
+.field span{display:block;font-weight:500;margin-bottom:4px;font-size:13px}
+.field input{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:#fff}
+.err{color:var(--coral);background:var(--coral-l);border-radius:8px;padding:8px 10px;margin-bottom:12px;font-size:13px}
+.demo{margin-top:20px;border-top:1px solid var(--line);padding-top:14px}
+.demo b{font-size:13px}
+.demo button{display:block;width:100%;text-align:left;border:1px solid var(--line);background:#F6F9FA;border-radius:8px;padding:8px 10px;margin-top:8px;cursor:pointer}
+.demo button:hover{border-color:var(--teal)}
+.demo small{display:block;color:var(--muted)}
+.demo code{font-family:var(--mono);font-size:12px}
+/* ---------- app ---------- */
+.app{display:grid;grid-template-columns:300px minmax(0,1fr) 370px;grid-template-rows:auto 1fr;height:100%;gap:12px;padding:12px}
+header{grid-column:1/-1;display:flex;align-items:center;gap:12px;background:var(--slate);color:#fff;padding:10px 16px;border-radius:10px;flex-wrap:wrap}
+header h1{font-size:17px;margin:0;font-weight:600}
+header .sub{color:#9FB4BD;font-size:12.5px}
+header .sp{flex:1}
+.badge{font-family:var(--mono);font-size:12px;padding:3px 9px;border-radius:999px;background:#22404B;color:#BFE9E6}
+.badge.off{background:#4A3B1A;color:#F6D58E}
+.userbox{font-size:13px;color:#D4E3E8}
+.out{border:1px solid #35525E;background:transparent;color:#fff;border-radius:8px;padding:5px 12px;cursor:pointer}
+.out:hover{background:#22404B}
+.col{background:var(--panel);border:1px solid var(--line);border-radius:10px;display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.col h2{font-size:13px;margin:0;padding:12px 14px 6px;font-weight:600}
+.scroll{overflow:auto;padding:0 14px 14px;min-height:0;flex:1}
+.who{padding:12px 14px 0}
+.who b{font-size:15px}
+.who small{display:block;color:var(--muted)}
+.acct{border:1px solid var(--line);border-radius:8px;padding:9px 11px;margin-top:8px}
+.acct b{font-size:17px;font-variant-numeric:tabular-nums}
+.acct span{color:var(--muted);font-size:12.5px;display:block}
+.pill{display:inline-block;font-size:11.5px;padding:1px 8px;border-radius:999px;background:var(--teal-l);color:var(--teal-d);margin-right:4px}
+.pill.bad{background:var(--coral-l);color:var(--coral)} .pill.warn{background:var(--amber-l);color:var(--amber)}
+.feed-item{border-left:3px solid var(--line);padding:5px 8px;margin-top:6px;font-size:12.5px;background:#F6F9FA;border-radius:0 6px 6px 0}
+.feed-item.MEDIUM{border-color:var(--amber)} .feed-item.HIGH{border-color:var(--coral);background:var(--coral-l)}
+.feed-item .m{display:flex;justify-content:space-between;gap:8px;font-variant-numeric:tabular-nums}
+.feed-item .f{color:var(--muted);font-size:12px}
+.chat{flex:1;overflow:auto;padding:14px;display:flex;flex-direction:column;gap:10px;min-height:0}
+.msg{max-width:86%;padding:9px 12px;border-radius:12px;word-wrap:break-word}
+.msg.user{align-self:flex-end;background:var(--slate);color:#fff;border-bottom-right-radius:3px;white-space:pre-wrap}
+.msg.bot{align-self:flex-start;background:#EEF4F5;border-bottom-left-radius:3px}
+.msg .by{font-size:11.5px;color:var(--muted);margin-bottom:3px}
+.msg .by i{font-style:normal;font-family:var(--mono)}
+.msg ul{margin:4px 0;padding-left:18px} .msg li{margin:2px 0}
+.msg p{margin:0 0 6px} .msg p:last-child{margin:0}
+.msg em{color:var(--muted)}
+.caret::after{content:"";display:inline-block;width:7px;height:14px;background:var(--teal);margin-left:2px;vertical-align:-2px;animation:blink 1s steps(2) infinite}
+@keyframes blink{50%{opacity:0}}
+.chips{display:flex;flex-wrap:wrap;gap:7px;padding:0 14px 10px}
+.chip{border:1px solid var(--line);background:#fff;border-radius:999px;padding:5px 11px;cursor:pointer;font-size:12.5px}
+.chip:hover{border-color:var(--teal);color:var(--teal-d)}
+.composer{display:flex;gap:8px;padding:10px 14px 14px;border-top:1px solid var(--line)}
+.composer input{flex:1;padding:10px 12px;border:1px solid var(--line);border-radius:8px}
+.btn{border:0;border-radius:8px;padding:9px 16px;cursor:pointer;background:var(--teal);color:#fff;font-weight:500}
+.btn:hover{background:var(--teal-d)} .btn:disabled{opacity:.5;cursor:wait}
+.btn.ghost{background:transparent;color:var(--muted);border:1px solid var(--line)}
+.btn.ghost:hover{color:var(--ink);background:#F2F6F7}
+.approval{align-self:flex-start;border:1.5px solid var(--amber);background:var(--amber-l);border-radius:10px;padding:10px 12px;max-width:86%}
+.approval p{margin:0 0 8px}
+.approval input{padding:7px 10px;border:1px solid var(--line);border-radius:8px;width:100%;margin-bottom:8px;background:#fff}
+.approval .row{display:flex;gap:8px}
+.approval .e{color:var(--coral);font-size:12.5px;margin:-2px 0 6px}
+.dots span{display:inline-block;width:6px;height:6px;margin-right:3px;border-radius:50%;background:var(--muted);animation:b 1s infinite}
+.dots span:nth-child(2){animation-delay:.15s}.dots span:nth-child(3){animation-delay:.3s}
+@keyframes b{0%,80%,100%{opacity:.25}40%{opacity:1}}
+.tabs{display:flex;gap:4px;padding:10px 14px 0}
+.tab{border:0;background:none;padding:5px 10px;border-radius:6px;cursor:pointer;color:var(--muted);font-weight:500}
+.tab[aria-selected=true]{background:var(--teal-l);color:var(--teal-d)}
+.step{display:grid;grid-template-columns:18px 1fr;gap:8px;margin-top:9px;font-size:12.5px}
+.dot{width:10px;height:10px;border-radius:50%;margin-top:5px;background:var(--line)}
+.dot.guardrail,.dot.note{background:var(--amber)} .dot.route{background:var(--slate)} .dot.agent{background:var(--teal)}
+.dot.tool{background:#6C8FA0} .dot.bad{background:var(--coral)} .dot.ok{background:var(--green)}
+.step code{font-family:var(--mono);font-size:11.5px;background:#EEF3F5;padding:1px 5px;border-radius:4px;word-break:break-all}
+.step .k{color:var(--muted)}
+.meta{font-family:var(--mono);font-size:11.5px;color:var(--muted);margin-top:10px}
+.empty{color:var(--muted);padding:6px 0}
+.audit-row{border-bottom:1px solid var(--line);padding:6px 0;font-size:12px}
+.audit-row .h{display:flex;justify-content:space-between;font-family:var(--mono)}
+.svc{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin-top:8px}
+.svc .dot{margin:0;flex:none} .svc div{flex:1} .svc small{display:block;color:var(--muted)}
+@media (max-width:1100px){
+  .login{grid-template-columns:1fr} .login .brand{padding:32px 24px}
+  .app{grid-template-columns:1fr;grid-template-rows:auto auto minmax(520px,1fr) 420px;height:auto}
+  .chat{min-height:340px}
+}
+@media (prefers-reduced-motion:reduce){.dots span,.caret::after{animation:none}}
+</style>
+</head>
+<body>
+
+<section class="login" id="login" hidden>
+  <div class="brand">
+    <h1>BankMind</h1>
+    <p>A multi-agent banking assistant. A Supervisor routes each request to specialist agents that call governed banking tools and external services.</p>
+    <div class="flow"><span>Supervisor</span><span>Customer &amp; Banking</span><span>Risk &amp; Fraud</span><span>Credit &amp; Loan</span><span>Payments</span><span>Advisory</span></div>
+  </div>
+  <div class="formwrap">
+    <form class="card" id="loginForm">
+      <h2>Sign in</h2>
+      <p class="hint">Use your online banking credentials.</p>
+      <div class="err" id="loginErr" hidden></div>
+      <label class="field"><span>Username</span><input id="u" autocomplete="username" required></label>
+      <label class="field"><span>Password</span><input id="p" type="password" autocomplete="current-password" required></label>
+      <button class="btn" style="width:100%" id="loginBtn">Sign in</button>
+      <div class="demo">
+        <b>Demo accounts for reviewers</b>
+        <button type="button" data-u="aarav.sharma" data-p="Aarav@2026">Aarav Sharma<small><code>aarav.sharma</code> / <code>Aarav@2026</code> - strong credit, transfers</small></button>
+        <button type="button" data-u="priya.nair" data-p="Priya@2026">Priya Nair<small><code>priya.nair</code> / <code>Priya@2026</code> - suspicious transactions</small></button>
+        <button type="button" data-u="rohan.mehta" data-p="Rohan@2026">Rohan Mehta<small><code>rohan.mehta</code> / <code>Rohan@2026</code> - KYC pending</small></button>
+      </div>
+    </form>
+  </div>
+</section>
+
+<div class="app" id="app" hidden>
+  <header>
+    <h1>BankMind</h1><span class="sub">Multi-agent banking assistant</span>
+    <span class="sp"></span>
+    <span class="userbox" id="userbox"></span>
+    <button class="out" id="logout">Sign out</button>
+  </header>
+
+  <aside class="col" aria-label="Customer">
+    <div class="who"><b id="name"></b><small id="seg"></small></div>
+    <div class="scroll" id="overview" style="padding-top:4px"></div>
+    <h2>Live transactions</h2>
+    <div class="scroll" id="feed" style="max-height:34%"><div class="empty">Waiting for activity…</div></div>
+  </aside>
+
+  <main class="col" aria-label="Chat">
+    <div class="chat" id="chat" aria-live="polite"></div>
+    <div class="chips" id="chips"></div>
+    <form class="composer" id="form">
+      <input id="msg" autocomplete="off" maxlength="1000" placeholder="Ask about balances, suspicious activity, loans, KYC, rates or transfers" aria-label="Message">
+      <button class="btn" id="send">Send</button>
+      <button class="btn ghost" id="reset" type="button">New chat</button>
+    </form>
+  </main>
+
+  <aside class="col" aria-label="Agent activity">
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" aria-selected="true" data-t="trace">Agent trace</button>
+      <button class="tab" role="tab" aria-selected="false" data-t="platform">Platform</button>
+      <button class="tab" role="tab" aria-selected="false" data-t="audit">Audit log</button>
+    </div>
+    <div class="scroll" id="panel"></div>
+  </aside>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const inr = n => '₹' + Math.round(n).toLocaleString('en-IN');
+const AGENT_LABEL = {account:'Customer & Banking', fraud:'Risk & Fraud', credit:'Credit & Loan', payments:'Payments', advisory:'Financial Advisory'};
+let token = sessionStorage.getItem('bm_token'), me = null, lastFeed = 0, tab = 'trace', trace = [], lastDone = null, busy = false;
+let feedTimer, svcTimer;
+
+const PROMPTS = {
+  C001: [['Account summary','What is my account summary?'],['Spending insights','Show my spending by category for the last 30 days'],
+         ['Loan eligibility','Am I eligible for a loan of 5 lakh over 3 years?'],['Credit report','Show my credit report'],
+         ['Send ₹5,000','Send 5000 to Ravi'],['Transfer ₹40,000','Transfer 40000 to Meera'],['USD rate','What is the USD to INR rate?']],
+  C002: [['Suspicious activity','Any suspicious transactions on my account?'],['Block my card','I did not make these transactions, please block my card'],
+         ['Account summary','What is my account summary?'],['Loan ₹8 lakh','Can I get a loan of 8 lakh for 2 years?'],
+         ['Transfer ₹40,000','Transfer 40000 to Anita'],['Saving advice','How can I save more?']],
+  C003: [['Loan eligibility','Am I eligible for a loan of 5 lakh over 3 years?'],['Complete KYC','Please complete my KYC'],
+         ['Credit report','Show my credit report'],['Pay flagged payee','Send 1000 to Blocked Entity'],['Gold price','What is gold trading at?']],
+};
+
+async function api(path, opt = {}) {
+  opt.headers = Object.assign({'Content-Type': 'application/json'}, opt.headers || {}, token ? {Authorization: 'Bearer ' + token} : {});
+  const r = await fetch(path, opt);
+  const j = await r.json().catch(() => ({}));
+  if (r.status === 401 && token) { signedOut('Your session expired. Please sign in again.'); throw new Error('unauthorized'); }
+  if (!r.ok) { const e = new Error(j.detail || r.statusText); e.status = r.status; throw e; }
+  return j;
+}
+
+/* ---------- markdown-lite ---------- */
+function md(t) {
+  const h = esc(t).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/(^|\s)_(.+?)_(?=\s|$|[.,])/g, '$1<em>$2</em>');
+  let out = '', list = false;
+  for (const l of h.split('\n')) {
+    if (/^\s*[-•]\s+/.test(l)) { if (!list) { out += '<ul>'; list = true; } out += '<li>' + l.replace(/^\s*[-•]\s+/, '') + '</li>'; }
+    else { if (list) { out += '</ul>'; list = false; } if (l.trim()) out += '<p>' + l + '</p>'; }
+  }
+  return out + (list ? '</ul>' : '');
+}
+
+/* ---------- auth ---------- */
+function showLogin(msg) {
+  $('#app').hidden = true; $('#login').hidden = false;
+  const e = $('#loginErr'); e.hidden = !msg; e.textContent = msg || '';
+  clearInterval(feedTimer); clearInterval(svcTimer);
+}
+function signedOut(msg) { token = null; sessionStorage.removeItem('bm_token'); showLogin(msg); }
+
+$('#loginForm').onsubmit = async e => {
+  e.preventDefault(); $('#loginBtn').disabled = true;
+  try {
+    const r = await api('/api/auth/login', {method: 'POST', body: JSON.stringify({username: $('#u').value, password: $('#p').value})});
+    token = r.token; sessionStorage.setItem('bm_token', token); $('#p').value = '';
+    await startApp();
+  } catch (err) { const el = $('#loginErr'); el.hidden = false; el.textContent = err.message; }
+  $('#loginBtn').disabled = false;
+};
+document.querySelectorAll('.demo button').forEach(b => b.onclick = () => { $('#u').value = b.dataset.u; $('#p').value = b.dataset.p; $('#p').focus(); });
+$('#logout').onclick = () => signedOut();
+
+/* ---------- chat ---------- */
+function addMsg(role, html, by) {
+  const d = document.createElement('div'); d.className = 'msg ' + role;
+  d.innerHTML = (by !== undefined ? `<div class="by">${by}</div>` : '') + `<div class="body">${html}</div>`;
+  $('#chat').appendChild(d); $('#chat').scrollTop = 1e9; return d;
+}
+
+function addApproval(a) {
+  const d = document.createElement('div'); d.className = 'approval';
+  d.innerHTML = `<p><strong>Approve transfer?</strong><br>${inr(a.amount)} to ${esc(a.beneficiary)} from ${esc(a.from_account_id)}</p>
+    <input type="password" placeholder="Re-enter your password to confirm" autocomplete="current-password" aria-label="Password">
+    <div class="e" hidden></div>
+    <div class="row"><button class="btn" data-a="1">Approve and send</button><button class="btn ghost" data-a="0">Reject</button></div>`;
+  d.querySelectorAll('button').forEach(b => b.onclick = async () => {
+    const approve = b.dataset.a === '1', pw = d.querySelector('input').value, err = d.querySelector('.e');
+    if (approve && !pw) { err.hidden = false; err.textContent = 'Enter your password to approve.'; return; }
+    d.querySelectorAll('button').forEach(x => x.disabled = true);
+    try {
+      const r = await api('/api/approvals/' + a.approval_id, {method: 'POST', body: JSON.stringify({approve, password: pw})});
+      d.innerHTML = r.status === 'EXECUTED' ? `✅ Approved. ${inr(a.amount)} sent to ${esc(a.beneficiary)} via ${esc(r.rail)} (ref ${esc(r.utr)}). New balance ${inr(r.new_balance)}.`
+        : r.status === 'REJECTED' ? 'Transfer rejected. No money was moved.' : `Transfer failed: ${esc(r.reason || r.status)}`;
+      loadOverview(); if (tab !== 'trace') renderPanel();
+    } catch (e) { err.hidden = false; err.textContent = e.message; d.querySelectorAll('button').forEach(x => x.disabled = false); }
+  });
+  $('#chat').appendChild(d); $('#chat').scrollTop = 1e9;
+}
+
+let raf = 0;
+function schedule(fn) { if (!raf) raf = requestAnimationFrame(() => { raf = 0; fn(); }); }
+
+async function send(text) {
+  text = text.trim(); if (!text || busy) return;
+  busy = true; $('#send').disabled = true; $('#msg').value = '';
+  addMsg('user', esc(text));
+  trace = []; lastDone = null; if (tab === 'trace') renderPanel();
+  const bot = addMsg('bot', '<span class="dots"><span></span><span></span><span></span></span>', 'Supervisor');
+  const body = bot.querySelector('.body'), by = bot.querySelector('.by');
+  let raw = '', started = false;
+  const paint = () => { body.innerHTML = md(raw); body.classList.add('caret'); $('#chat').scrollTop = 1e9; };
+  try {
+    const r = await fetch('/api/chat/stream', {method: 'POST', headers: {'Content-Type': 'application/json', Authorization: 'Bearer ' + token}, body: JSON.stringify({message: text})});
+    if (r.status === 401) { signedOut('Your session expired. Please sign in again.'); return; }
+    if (r.status === 429 || !r.ok) { const j = await r.json().catch(() => ({})); throw new Error(j.detail || r.statusText); }
+    const reader = r.body.getReader(), dec = new TextDecoder(); let buf = '';
+    while (true) {
+      const {done, value} = await reader.read(); if (done) break;
+      buf += dec.decode(value, {stream: true});
+      let i;
+      while ((i = buf.indexOf('\n\n')) >= 0) {
+        const chunk = buf.slice(0, i); buf = buf.slice(i + 2);
+        if (!chunk.startsWith('data: ')) continue;
+        const ev = JSON.parse(chunk.slice(6));
+        if (ev.type === 'token') { if (!started) { started = true; raw = ''; } raw += ev.text; schedule(paint); }
+        else if (ev.type === 'approval') addApproval(ev);
+        else if (ev.type === 'done') { lastDone = ev; }
+        else if (ev.type === 'error') { raw += '\n' + ev.text; schedule(paint); }
+        else {
+          trace.push(ev);
+          if (ev.type === 'route' && ev.agents.length) by.textContent = ev.agents.map(a => AGENT_LABEL[a]).join(' + ') + ' Agent';
+          if (tab === 'trace') schedule(renderPanel);
+        }
+      }
+    }
+    body.classList.remove('caret'); body.innerHTML = md(raw || '…');
+    if (tab === 'trace') renderPanel();
+    loadOverview();
+  } catch (e) {
+    if (e.message !== 'unauthorized') { body.classList.remove('caret'); body.innerHTML = '<p>' + esc(e.message) + '</p>'; }
+  }
+  busy = false; $('#send').disabled = false; $('#msg').focus();
+}
+
+/* ---------- right panel ---------- */
+function renderTrace() {
+  if (!trace.length) return '<div class="empty">Send a message to watch the Supervisor route it, which agents run and which tools and external services they call.</div>';
+  let h = '';
+  for (const s of trace) {
+    if (s.type === 'guardrail') h += `<div class="step"><i class="dot guardrail"></i><div><b>Guardrails</b> <span class="k">${s.allowed ? 'passed' : 'blocked'}</span><br>${s.findings.map(esc).join('<br>')}</div></div>`;
+    else if (s.type === 'route') h += `<div class="step"><i class="dot route"></i><div><b>Supervisor</b> routed <code>${esc(s.intent)}</code><br>${s.agents.map(a => `<span class="pill">${esc(a)}</span>`).join('') || '<span class="k">no specialist needed</span>'}<br><span class="k">${esc(s.rationale)}</span></div></div>`;
+    else if (s.type === 'agent') h += `<div class="step"><i class="dot agent"></i><div><b>${esc(s.label)}</b> started</div></div>`;
+    else if (s.type === 'tool') h += `<div class="step"><i class="dot tool ${s.ok ? '' : 'bad'}"></i><div><code>${esc(s.tool)}</code> ${s.ok ? '' : '<span class="pill bad">error</span>'} <span class="k">${s.latency_ms} ms</span><br><span class="k">args</span> <code>${esc(JSON.stringify(s.args))}</code><br><span class="k">→ ${esc(s.result_preview)}</span></div></div>`;
+    else if (s.type === 'note') h += `<div class="step"><i class="dot note"></i><div>${esc(s.text)}</div></div>`;
+    else if (s.type === 'result') h += `<div class="step"><i class="dot route"></i><div>${esc(s.note)}</div></div>`;
+  }
+  if (lastDone) h += `<div class="meta">Completed in ${lastDone.latency_ms} ms · trace ${esc(lastDone.trace_id || '')}</div>`;
+  return h;
+}
+async function renderAudit() {
+  const rows = await api('/api/audit?limit=40');
+  if (!rows.length) return '<div class="empty">No tool calls recorded yet.</div>';
+  return rows.map(a => `<div class="audit-row"><div class="h"><span>${esc(a.agent)} → ${esc(a.tool)}</span><span>${a.ok ? 'ok' : 'denied'}</span></div><div style="color:var(--muted)">${esc(a.ts.slice(11))} · ${a.latency_ms} ms${a.trace_id ? ' · trace ' + esc(a.trace_id) : ''}</div></div>`).join('');
+}
+async function renderPlatform() {
+  const [s, m] = await Promise.all([api('/api/external/status'), api('/api/metrics')]);
+  const kv = (k, v) => `<div class="svc"><div><b>${esc(v)}</b><small>${esc(k)}</small></div></div>`;
+  let h = '<h2 style="padding:10px 0 0">Observability</h2>' +
+    kv('requests handled', m.requests) + kv('avg response time', m.avg_latency_ms + ' ms') +
+    kv('avg time to first word', m.avg_first_token_ms + ' ms') + kv('tool calls (errors)', `${m.tool_calls} (${m.tool_errors})`) +
+    kv('guardrail blocks', m.guardrail_blocks) + kv('est. output tokens', m.est_output_tokens) +
+    kv('agent usage', Object.entries(m.agent_usage).map(([a, n]) => `${a}: ${n}`).join(' · ') || '-');
+  h += '<h2 style="padding:14px 0 0">External services</h2>';
+  h += s.services.map(v => `<div class="svc"><i class="dot ${v.state === 'HEALTHY' ? 'ok' : 'bad'}"></i><div><b>${esc(v.label)}</b><small>${v.state.toLowerCase()} · ${v.calls} calls · avg ${v.avg_latency_ms} ms · ${v.failures} failures</small></div></div>`).join('');
+  h += '<h2 style="padding:14px 0 4px">Recent calls</h2>' + (s.recent.map(r => `<div class="audit-row"><div class="h"><span>${esc(r.service)}.${esc(r.operation)}</span><span>${r.ok ? 'ok' : 'err'}</span></div><div style="color:var(--muted)">${esc(r.ts.slice(11))} · ${r.latency_ms} ms · ${r.attempts} attempt(s)${r.detail ? ' · ' + esc(r.detail) : ''}</div></div>`).join('') || '<div class="empty">No calls yet.</div>');
+  return h;
+}
+async function renderPanel() {
+  const t = tab; let h;
+  try { h = t === 'trace' ? renderTrace() : t === 'audit' ? await renderAudit() : await renderPlatform(); } catch { return; }
+  if (t === tab) $('#panel').innerHTML = h;
+}
+document.querySelectorAll('.tab').forEach(t => t.onclick = () => {
+  tab = t.dataset.t; document.querySelectorAll('.tab').forEach(x => x.setAttribute('aria-selected', x === t)); renderPanel();
+});
+
+/* ---------- sidebar ---------- */
+async function loadOverview() {
+  try {
+    const o = await api('/api/overview');
+    $('#name').textContent = o.name; $('#seg').textContent = `${o.segment} · credit score ${o.credit_score}`;
+    let h = `<span class="pill ${o.kyc === 'VERIFIED' ? '' : 'warn'}">KYC ${o.kyc}</span>`;
+    h += o.accounts.map(a => `<div class="acct"><span>${esc(a.type)} ${esc(a.number)}</span><b>${inr(a.balance)}</b></div>`).join('');
+    h += o.cards.map(c => `<div class="acct"><span>${esc(c.type)} ••${esc(c.last4)}</span><span class="pill ${c.status === 'ACTIVE' ? '' : 'bad'}">${c.status}</span></div>`).join('');
+    h += o.loans.map(l => `<div class="acct"><span>${esc(l.type)}</span><b>${inr(l.outstanding)}</b><span>EMI ${inr(l.emi)} · ${l.remaining_months} months left</span></div>`).join('');
+    $('#overview').innerHTML = h;
+  } catch {}
+}
+async function pollFeed() {
+  try {
+    const r = await api('/api/feed?since=' + lastFeed);
+    lastFeed = Math.max(lastFeed, r.last_id);
+    const box = $('#feed');
+    if (r.events.length && box.querySelector('.empty')) box.innerHTML = '';
+    for (const e of r.events) {
+      const d = document.createElement('div'); d.className = 'feed-item ' + e.risk_level;
+      d.innerHTML = `<div class="m"><span>${esc(e.txn.merchant)}</span><b>${inr(e.txn.amount)}</b></div>` +
+        (e.risk_level !== 'LOW' ? `<div class="f">Risk ${e.risk_score} (${e.risk_level}): ${esc(e.flags.slice(0, 2).join('; '))}${e.txn.status === 'HELD' ? ' · held' : ''}</div>` : `<div class="f">${esc(e.txn.category)} · ${esc(e.txn.channel)}</div>`);
+      box.prepend(d); while (box.children.length > 12) box.lastChild.remove();
+    }
+  } catch {}
+}
+
+/* ---------- start ---------- */
+async function startApp() {
+  me = await api('/api/auth/me');
+  $('#userbox').textContent = `${me.name} (${me.username})`;
+  $('#login').hidden = true; $('#app').hidden = false;
+  $('#chips').innerHTML = (PROMPTS[me.customer_id] || []).map(([l, t]) => `<button class="chip" data-t="${esc(t)}">${esc(l)}</button>`).join('');
+  $('#chat').innerHTML = ''; trace = []; lastDone = null; lastFeed = 0; $('#feed').innerHTML = '<div class="empty">Waiting for activity…</div>';
+  const hist = await api('/api/history').catch(() => []);
+  if (hist.length) hist.forEach(x => x.role === 'customer' ? addMsg('user', esc(x.text)) : addMsg('bot', md(x.text), 'Assistant'));
+  addMsg('bot', `Hello ${esc(me.name.split(' ')[0])}! I can check balances and spending, look for suspicious transactions, assess loans, run KYC, share market rates and make transfers. Pick a suggestion or type your own request.`, 'Supervisor');
+  renderPanel(); loadOverview();
+  clearInterval(feedTimer); clearInterval(svcTimer);
+  feedTimer = setInterval(pollFeed, 3000);
+  svcTimer = setInterval(() => { if (tab === 'platform') renderPanel(); }, 5000);
+}
+
+$('#chips').onclick = e => { const b = e.target.closest('.chip'); if (b) send(b.dataset.t); };
+$('#form').onsubmit = e => { e.preventDefault(); send($('#msg').value); };
+$('#reset').onclick = async () => { await api('/api/reset', {method: 'POST'}); $('#chat').innerHTML = ''; trace = []; renderPanel(); addMsg('bot', 'New conversation started. How can I help?', 'Supervisor'); };
+
+(async () => { if (token) { try { await startApp(); return; } catch {} } showLogin(); })();
+</script>
+</body>
+</html>
