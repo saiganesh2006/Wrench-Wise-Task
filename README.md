@@ -7,6 +7,8 @@
 
 A Supervisor agent understands natural-language requests, routes them to specialist agents, and those agents act through governed banking tools and external services — with streaming answers, human-in-the-loop approvals and full audit trails.
 
+## [🎥 Demo Video](https://drive.google.com/file/d/1HBvKdBPpjAdivaXwPjAp3sB17rQgTm9W/view?usp=drivesdk)
+
 
 `Python` · `FastAPI` · `SQLite` · `Claude / OpenAI-compatible LLMs` · `Server-Sent Events` · `JWT` · `pytest`
 
