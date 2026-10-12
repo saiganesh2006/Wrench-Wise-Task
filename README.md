@@ -1,152 +1,61 @@
-# Wrench-Wise-Task
-<div align="center">
+# BankMind – Multi-Agent Banking Assistant (full stack)
 
-# 🏦 BankMind
+Wrench Wise AI/ML Intern assignment: a simulated real-time bank where a **Supervisor agent** routes natural-language
+requests to **5 specialist agents** that call **governed banking tools** and **external services**.
+FastAPI + SQLite + vanilla-JS UI. LLM: Anthropic Claude **or any OpenAI-compatible model (incl. free local Ollama)**.
 
-### Multi-Agent AI Banking Assistant — Simulated Real-Time Banking Architecture
-
-A Supervisor agent understands natural-language requests, routes them to specialist agents, and those agents act through governed banking tools and external services — with streaming answers, human-in-the-loop approvals and full audit trails.
-
-
-`Python` · `FastAPI` · `SQLite` · `Claude / OpenAI-compatible LLMs` · `Server-Sent Events` · `JWT` · `pytest`
-
-</div>
-
----
-
-## 📌 Overview
-Built for the **Wrench Wise AI/ML Internship technical assignment**: *"Build an application for simulated real-time banking architecture with multi-agent automation."*
-The project implements a working MVP of the provided reference architecture: a Supervisor/Orchestrator, five specialised agents, simulated banking APIs, external services, an AI-gateway of guardrails, and a web interface.
-
-## ✅ Assignment Requirements Coverage
-| Requirement | Implementation |
+## What's in it
+| Area | Implementation |
 |---|---|
-| Supervisor / Orchestrator agent that routes requests | LLM intent routing (small fast model) with rule-based backup — `backend/app/agents.py` |
-| At least 3 specialised agents | **5 agents:** Customer & Banking · Risk & Fraud · Credit & Loan · Payments · Financial Advisory |
-| Simulated banking APIs / tools | ~15 governed tools over a SQLite core-banking store — `tools.py`, `db.py` |
-| Natural-language interaction using an LLM | Streaming tool-use loop with Claude or any OpenAI-compatible model — `llm.py` |
-| 3–5 working banking use cases | 5 use cases (below) |
-| Simple, user-friendly interface | Login, chat, customer overview, live transaction feed, agent trace — `frontend/index.html` |
+| **Login** | Username/password (scrypt-hashed), JWT sessions, lockout after 5 bad attempts, every API route protected, `customer_id` taken from the token |
+| **Persistence** | SQLite (`data/bankmind.db`): users, customers, accounts, cards, loans, transactions, approvals, audit log, external-call log, chat history |
+| **Supervisor + agents** | Customer & Banking, Risk & Fraud, Credit & Loan, Payments, Financial Advisory |
+| **Instant, generated replies** | Token streaming (SSE) – words appear as the model produces them; agent trace streams live; fast small model for routing |
+| **Layer 8 – External services** | Credit bureau, KYC/AML screening, Government PAN API, Payment network (UPI/IMPS), Market data – via retry + circuit breaker, all calls logged; UI tab shows health |
+| **Safety** | PII masking, prompt-injection block, tool permission boundary, schema validation, human approval + **password step-up** for transfers > ₹25,000, AML fail-closed |
+| **UI** | Login page, chat, customer overview, live transaction feed, agent trace, external-services status, audit log |
 
-## ✨ Features
-- **Multi-agent orchestration** — Supervisor selects 1–2 agents per request; each agent can only call its own tools (permission boundary).
-- **Streaming responses** — answers appear word-by-word (SSE); the agent trace updates live.
-- **Authentication** — username/password (scrypt-hashed), signed JWT sessions, account lockout after 5 failed logins.
-- **Persistent storage** — SQLite for customers, accounts, cards, loans, transactions, approvals, audit log and chat history.
-- **External services layer (simulated)** — credit bureau, KYC/AML screening, government PAN API, UPI/IMPS payment network, market data — behind retry + circuit-breaker, every call logged.
-- **Safety & governance** — PII masking, prompt-injection and off-topic blocking, schema validation, session-bound authorization, human approval + password step-up for large transfers, AML fail-closed.
-- **Observability** — per-request trace IDs, tool-call audit log, metrics, external-service health panel.
-- **RAG-lite** — BM25 retrieval over bank policy documents so the Credit agent cites policy IDs.
-- **Resilience** — graceful fallbacks when the LLM, bureau or payment network is unavailable (payments never debit without network success).
+### Use cases
+1. Account summary · 2. Spending insights · 3. Fraud scan + block card · 4. Loan eligibility using the **live bureau score**,
+KYC completion via PAN + AML check · 5. Transfers (UPI/IMPS, AML-screened, approval for large amounts) · 6. Market rates & saving advice
 
-## 🎯 Use Cases
-1. **Account & spending insights** — *"What is my account summary?"*, *"Show my spending by category"*
-2. **Fraud detection & card blocking** — *"Any suspicious transactions?"* → *"Block my card"*
-3. **Loan eligibility & KYC** — live bureau score, FOIR check, policy-grounded reasons / counter-offers; *"Complete my KYC"*
-4. **Transfers with approval** — *"Send 5000 to Ravi"* (instant) vs *"Transfer 40000 to Meera"* (approval card + password)
-5. **Market rates & saving advice** — *"What is the USD to INR rate?"*, *"How can I save more?"*
-
-## 🧱 Architecture
-```mermaid
-flowchart TB
-  UI["Web UI: login · chat · live feed · agent trace"] -->|JWT + SSE| API["FastAPI: auth · validation · rate limit · trace IDs"]
-  API --> GW["AI Gateway: PII masking · injection / content policy · model routing"]
-  GW --> SUP["Supervisor agent: intent · routing · memory · aggregation"]
-  SUP --> A1["Customer & Banking"]
-  SUP --> A2["Risk & Fraud"]
-  SUP --> A3["Credit & Loan"]
-  SUP --> A4["Payments"]
-  SUP --> A5["Financial Advisory"]
-  A1 & A2 & A3 & A4 & A5 --> TL["Tool layer: registry · schema validation · permission boundary · approvals · audit"]
-  TL --> DB[("SQLite: customers · accounts · transactions · approvals · audit · chat")]
-  TL --> RAG["Policy knowledge base (BM25)"]
-  TL --> EXT["External services: bureau · KYC/AML · PAN · UPI/IMPS · market data"]
-```
-Full diagram, request flow, mapping to the reference architecture and design decisions: **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**.
-
-## 🛠 Tech Stack
-| Layer | Technology |
-|---|---|
-| Backend | Python 3.10+, FastAPI, Uvicorn, Pydantic |
-| AI | Anthropic Claude **or** any OpenAI-compatible model (OpenAI, Groq, local Ollama) with tool calling + streaming |
-| Data | SQLite (WAL) |
-| Security | scrypt password hashing, PyJWT (HS256), rate limiting, guardrails |
-| Frontend | Vanilla HTML/CSS/JS, Server-Sent Events |
-| Testing / Deploy | pytest (27 tests), Docker, Render blueprint |
-
-## 🚀 Getting Started
-### Quick start
+## Run
 ```bash
-git clone https://github.com/YOUR-USERNAME/bankmind.git
-cd bankmind
-./run.sh            # macOS / Linux      (Windows: run.bat)
-```
-Open **http://localhost:8000**.
-
-### Manual setup
-```bash
-python -m venv .venv && source .venv/bin/activate     # Windows: .venv\Scripts\activate
+python -m venv .venv && source .venv/bin/activate        # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
-cp .env.example .env                                  # then add your LLM settings
-uvicorn backend.app.main:app --port 8000
+cp .env.example .env                                     # add a key – see below
+uvicorn backend.app.main:app --reload --port 8000
 ```
+Open **http://localhost:8000** and sign in:
 
-### Connect an LLM
-| Option | `.env` settings |
-|---|---|
-| Anthropic Claude | `ANTHROPIC_API_KEY=...` (optional `LLM_MODEL`, `LLM_ROUTER_MODEL`) |
-| OpenAI / Groq / Together | `LLM_PROVIDER=openai`, `OPENAI_API_KEY=...`, `OPENAI_BASE_URL=...`, `LLM_MODEL=...` |
-| Free local (Ollama) | `LLM_PROVIDER=openai`, `OPENAI_BASE_URL=http://localhost:11434/v1`, `LLM_MODEL=llama3.1` (needs tool-calling support) |
-
-Without a model the app still runs using built-in fallback logic (fixed wording), so configure a model for AI-generated answers.
-
-### Demo accounts
-| Username | Password | Try this |
+| Username | Password | Try |
 |---|---|---|
-| `aarav.sharma` | `Aarav@2026` | Loan approved · transfers to Ravi / Meera · USD rate |
-| `priya.nair` | `Priya@2026` | Suspicious transactions → block card · counter-offer loan · transfer to Anita |
-| `rohan.mehta` | `Rohan@2026` | Loan declined (KYC pending) → *"complete my KYC"* → approved · "send 1000 to Blocked Entity" → AML rejection |
+| `aarav.sharma` | `Aarav@2026` | loan approved, transfers (Ravi / Meera), USD rate |
+| `priya.nair` | `Priya@2026` | suspicious txns → block card, counter-offer loan, transfer to Anita |
+| `rohan.mehta` | `Rohan@2026` | loan declined (KYC pending) → "complete my KYC" → approved; "send 1000 to Blocked Entity" → AML rejection |
 
-*All data is fictional.*
+## Getting real (non-template) answers
+Replies are **generated by the model** when a provider is configured; otherwise the app falls back to *offline mode*
+(fixed templates, shown in the header badge).
+* **Claude:** `ANTHROPIC_API_KEY=...` (optionally `LLM_MODEL`, `LLM_ROUTER_MODEL`).
+* **Free/local:** install Ollama, `ollama pull llama3.1`, then in `.env`:
+  `LLM_PROVIDER=openai`, `OPENAI_BASE_URL=http://localhost:11434/v1`, `LLM_MODEL=llama3.1` (model must support tool calling).
+* **OpenAI / Groq / Together:** set `LLM_PROVIDER=openai`, `OPENAI_API_KEY`, `OPENAI_BASE_URL`, `LLM_MODEL`.
 
-## 🧪 Testing
+If the LLM errors, the request automatically degrades to offline logic and the trace says so.
+
+## Tests, reset, Docker
 ```bash
-python -m pytest -q tests
-```
-27 tests cover authentication and lockout, all use cases, external-service failures and the circuit breaker, approvals (single-use, step-up), guardrails, streaming (SSE), the LLM tool-use loop with a fake provider, provider adapters, and observability.
-
-## ☁️ Deployment
-One-click **Render** blueprint (`render.yaml`), `Dockerfile`, `Procfile`; Hugging Face Spaces and Railway also work. See **[docs/DEPLOY.md](docs/DEPLOY.md)**.
-
-## 📁 Project Structure
-```
-bankmind/
-├── backend/app/
-│   ├── main.py          # API: auth, SSE streaming, approvals, live feed, metrics
-│   ├── agents.py        # Supervisor + 5 specialist agents (streaming generator)
-│   ├── tools.py         # Governed banking tools (registry, validation, permissions, audit)
-│   ├── external.py      # External services layer + retry/circuit breaker
-│   ├── llm.py           # Provider-agnostic LLM client with streaming
-│   ├── guardrails.py    # PII masking, injection / content policy
-│   ├── knowledge.py     # Policy documents + BM25 retrieval
-│   ├── db.py            # SQLite schema, seed data, helpers
-│   └── auth.py / security.py
-├── frontend/index.html  # Web UI
-├── tests/test_app.py
-├── docs/                # ARCHITECTURE · DEPLOY · SUBMISSION_CHECKLIST · DEMO_SCRIPT
-├── Dockerfile · Procfile · render.yaml · run.sh · run.bat
-└── requirements.txt · .env.example
+python -m pytest -q tests          # 25 tests: auth, lockout, use cases, Layer 8, circuit breaker, streaming, LLM tool-loop, adapters
+python -m backend.app.db --reset   # re-seed demo data (planted fraud txns are dated relative to seeding)
+docker build -t bankmind . && docker run -p 8000:8000 -v bankmind-data:/data --env-file .env bankmind
 ```
 
-## 🔐 Design Decisions
-- **The model reasons; code decides.** Loan eligibility, fraud scoring, limits and approvals are deterministic and tested; the LLM orchestrates and explains.
-- **Security by construction.** The customer identity comes from the signed session, never from the model; each agent can call only its registered tools.
-- **Human in the loop.** Transfers above ₹25,000 need explicit approval plus password re-entry; approvals are single-use.
-- **Fail safe.** AML screening fails closed; payments never debit unless the payment network succeeds.
-
-## ⚠️ Limitations & Future Work
-Single-process SQLite (→ Postgres) · external providers are simulated (→ real HTTP clients) · BM25 only (→ embeddings + reranker) · no MFA / refresh tokens · more agents (Compliance, Notification) · LLM-as-judge evaluation of routing quality · token-budget enforcement.
-
-## 👤 Author
-**Sai Ganesh Depuru** — AI/ML Intern candidate, Wrench Wise
-[GitHub](https://github.com/saiganesh2006) · [LinkedIn](https://www.linkedin.com/in/sai-ganesh-depuru-410560281/) · saiganeshdepuru24@gmail.com
+## Layout
+```
+backend/app/ main.py (API, SSE, auth deps, live feed)  agents.py (supervisor+agents)  tools.py (governed tools)
+             external.py (Layer 8)  db.py (SQLite+seed)  auth.py / security.py  llm.py (providers+streaming)
+             guardrails.py  knowledge.py (RAG-lite)
+frontend/index.html    tests/test_app.py    docs/ARCHITECTURE.md  docs/DEMO_SCRIPT.md
+```
+Note: the external providers are in-process simulations behind the same interface a real HTTP client would use.
